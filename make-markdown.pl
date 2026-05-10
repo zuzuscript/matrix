@@ -20,6 +20,9 @@ my $browser_json_path = File::Spec->catfile(
 );
 my $markdown_path;
 
+binmode STDOUT, ':encoding(UTF-8)';
+binmode STDERR, ':encoding(UTF-8)';
+
 GetOptions(
 	'matrix=s' => \$json_path,
 	'browser-matrix=s' => \$browser_json_path,
@@ -190,7 +193,7 @@ sub _format_status_cell {
 		my $dot = sprintf(
 			' <small title="%0.2f s">%s</small>',
 			$elapsed,
-			$is_fastest ? '&#128309;' : '&#9898;',
+			$is_fastest ? '🔵' : '⚪',
 		);
 		$dot = '' if $impl eq 'JS/Browser';
 		return qq{<span class="badge text-bg-success" title="$title">pass$dot</span>};
