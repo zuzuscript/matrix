@@ -1,0 +1,12 @@
+{
+  "__browser_harness__": {
+    "JS/Browser": {
+      "status": "hard_fail",
+      "reason": "harness exception",
+      "output": "Error: ZuzuBrowser bundle did not load\n    at main (http://127.0.0.1:46233/__zuzu_browser_ztests/runner.js:309:10)\n    at http://127.0.0.1:46233/__zuzu_browser_ztests/runner.js:344:2\n    at http://127.0.0.1:46233/__zuzu_browser_ztests/runner.js:359:4\n",
+      "started": "2026-05-10T21:55:32Z",
+      "finished": "2026-05-10T21:55:32Z",
+      "elapsed": 0
+    }
+  }
+}
