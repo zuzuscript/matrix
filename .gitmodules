@@ -1,0 +1,9 @@
+[submodule "implementations/zuzu-perl"]
+	path = implementations/zuzu-perl
+	url = git@github.com:zuzuscript/zuzu-perl.git
+[submodule "implementations/zuzu-js"]
+	path = implementations/zuzu-js
+	url = git@github.com:zuzuscript/zuzu-js.git
+[submodule "implementations/zuzu-rust"]
+	path = implementations/zuzu-rust
+	url = git@github.com:zuzuscript/zuzu-rust.git
