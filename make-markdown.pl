@@ -124,6 +124,15 @@ for my $impl (@implementations) {
 	);
 }
 
+my $latest_finished = _latest_finished_timestamp($matrix);
+if ( defined $latest_finished ) {
+	push @lines, '';
+	push @lines, sprintf(
+		'Test run completed: `%s`.',
+		_markdown_escape($latest_finished),
+	);
+}
+
 my $markdown = join( "\n", @lines ) . "\n";
 if ( defined $markdown_path and $markdown_path ne '' ) {
 	_write_utf8( $markdown_path, $markdown );
@@ -229,6 +238,24 @@ sub _calculate_elapsed {
 		$f - $s;
 	};
 	return defined $elapsed ? $elapsed : 300;
+}
+
+sub _latest_finished_timestamp {
+	my ($matrix) = @_;
+	my $latest;
+
+	for my $test_name ( keys %{$matrix} ) {
+		next if ref $matrix->{$test_name} ne 'HASH';
+		for my $result ( values %{ $matrix->{$test_name} } ) {
+			next if ref $result ne 'HASH';
+			next if not defined $result->{finished};
+			next if $result->{finished} !~ /\A\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z\z/;
+			$latest = $result->{finished}
+				if not defined $latest or $result->{finished} gt $latest;
+		}
+	}
+
+	return $latest;
 }
 
 sub _html_escape {

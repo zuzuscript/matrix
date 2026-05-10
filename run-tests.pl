@@ -37,6 +37,7 @@ my $include_browser = 1;
 my $manual_browser = 0;
 my $show_browser = 0;
 my $include_marshal_interop = 1;
+my $browser_bundle_max_age_seconds = 12 * 60 * 60;
 my $perl_command;
 my $rust_command;
 my $js_command;
@@ -72,6 +73,8 @@ die "--only requires a non-empty pattern\n"
 	if defined $only_test_pattern and $only_test_pattern eq '';
 
 my %impl = _implementation_definitions();
+_ensure_browser_bundle( $impl{'JS/Node'} ) if $include_browser;
+
 my @ztest_files = _discover_ztest_files( \%impl );
 if ( defined $only_test_pattern ) {
 	@ztest_files = grep { $_ =~ /$only_test_pattern/ } @ztest_files;
@@ -207,6 +210,46 @@ sub _prepare_default_rust_binary {
 		die "Could not build Rust implementation binary:\n$result->{stdout}\n";
 	}
 	return;
+}
+
+sub _ensure_browser_bundle {
+	my ($js_impl) = @_;
+	my $js_root = $js_impl->{root};
+	my $build_script = File::Spec->catfile( $js_root, 'bin', 'build-browser-bundle' );
+	my $bundle_path = File::Spec->catfile( $js_root, 'dist', 'zuzu-browser.js' );
+
+	if ( not -x $build_script ) {
+		die "Cannot build JS/Browser bundle: missing $build_script\n";
+	}
+
+	return if _browser_bundle_is_fresh($bundle_path);
+
+	my $reason = -f $bundle_path
+		? 'older than 12 hours'
+		: 'missing';
+	print "Building JS/Browser bundle ($reason)...\n";
+	my $result = _run_with_timeout(
+		command_prefix => './bin/build-browser-bundle 2>&1',
+		cwd => $js_root,
+		timeout_seconds => 900,
+		zuzu_env => $js_impl->{zuzu},
+	);
+	if ( $result->{exit_code} != 0 or not -f $bundle_path ) {
+		die "Could not build JS/Browser bundle:\n$result->{stdout}\n";
+	}
+
+	return;
+}
+
+sub _browser_bundle_is_fresh {
+	my ($bundle_path) = @_;
+	return 0 if not -f $bundle_path;
+
+	my @stat = stat($bundle_path);
+	return 0 if not @stat;
+
+	my $mtime = $stat[9];
+	return ( time() - $mtime ) <= $browser_bundle_max_age_seconds ? 1 : 0;
 }
 
 sub _discover_ztest_files {
@@ -523,7 +566,7 @@ sub _run_browser_matrix {
 		return;
 	}
 	if ( not -f $bundle_path ) {
-		print "Skipping JS/Browser: missing $bundle_path; run implementations/zuzu-js/bin/build-browser-bundle first.\n";
+		print "Skipping JS/Browser: missing $bundle_path\n";
 		return;
 	}
 	if ( not $args{manual_browser} and not -x $electron ) {
