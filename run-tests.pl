@@ -72,6 +72,8 @@ die "--jobs requires an integer >= 1\n"
 die "--only requires a non-empty pattern\n"
 	if defined $only_test_pattern and $only_test_pattern eq '';
 
+_ensure_fresh_submodule_checkouts();
+
 my %impl = _implementation_definitions();
 _ensure_browser_bundle( $impl{'JS/Node'} ) if $include_browser;
 
@@ -1365,6 +1367,80 @@ sub _status_symbol {
 	return '🟡' if defined $status and $status eq 'soft_fail';
 	return '❌' if defined $status and $status eq 'hard_fail';
 	return '❌';
+}
+
+sub _ensure_fresh_submodule_checkouts {
+	my @implementation_paths = qw(
+		implementations/zuzu-perl
+		implementations/zuzu-rust
+		implementations/zuzu-js
+	);
+
+	print "Ensuring implementation submodules are initialized...\n";
+	my $result = _run_command_capture(
+		cwd => $matrix_root,
+		command => [
+			'git',
+			'submodule',
+			'update',
+			'--init',
+			'--recursive',
+			'--',
+			@implementation_paths,
+		],
+	);
+
+	if ( $result->{exit_code} != 0 ) {
+		die "Could not initialize/update implementation submodules:\n"
+			. $result->{output};
+	}
+
+	for my $impl_path (@implementation_paths) {
+		for my $required_path (qw( languagetests stdlib stdlib/tests )) {
+			my $abs_path = File::Spec->catdir(
+				$matrix_root,
+				( split m{/}, $impl_path ),
+				( split m{/}, $required_path ),
+			);
+			die "Implementation submodule is missing $impl_path/$required_path "
+				. "after git submodule update --init --recursive\n"
+				if not -d $abs_path;
+		}
+	}
+
+	return;
+}
+
+sub _run_command_capture {
+	my (%args) = @_;
+	my $old_cwd = getcwd();
+	my $output = '';
+
+	chdir $args{cwd} or die "Could not chdir to $args{cwd}: $!";
+
+	my $stderr_fh = gensym;
+	my $pid = open3( undef, my $stdout_fh, $stderr_fh, @{ $args{command} } );
+	my $selector = IO::Select->new( $stdout_fh, $stderr_fh );
+	while ( $selector->count ) {
+		for my $fh ( $selector->can_read ) {
+			my $chunk = <$fh>;
+			if ( defined $chunk ) {
+				$output .= $chunk;
+				next;
+			}
+			$selector->remove($fh);
+			close $fh;
+		}
+	}
+	waitpid( $pid, 0 );
+	my $exit_code = $? >> 8;
+
+	chdir $old_cwd or die "Could not restore cwd to $old_cwd: $!";
+
+	return {
+		exit_code => $exit_code,
+		output => defined $output ? $output : '',
+	};
 }
 
 sub _run_with_timeout {
