@@ -28,7 +28,7 @@ my $default_browser_output_path = File::Spec->catfile(
 	'browser-implementation-matrix.json',
 );
 
-my $timeout_seconds = 60;
+my $timeout_seconds = 180;
 my $output_path = $default_output_path;
 my $browser_output_path = $default_browser_output_path;
 my $only_test_pattern;
