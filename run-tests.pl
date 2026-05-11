@@ -158,7 +158,7 @@ sub _implementation_definitions {
 	my $rust_root = File::Spec->catdir( $matrix_root, 'implementations', 'zuzu-rust' );
 	my $js_root = File::Spec->catdir( $matrix_root, 'implementations', 'zuzu-js' );
 
-	my $perl_zuzu = File::Spec->catfile( $perl_root, 'bin', 'zuzu' );
+	my $perl_zuzu = File::Spec->catfile( $perl_root, 'bin', 'zuzu.pl' );
 	my $rust_zuzu = File::Spec->catfile( $rust_root, 'target', 'debug', 'zuzu-rust' );
 	my $js_zuzu = File::Spec->catfile( $js_root, 'bin', 'zuzu-js' );
 	my $electron_zuzu = File::Spec->catfile( $js_root, 'bin', 'zuzu-js-electron' );
@@ -168,7 +168,7 @@ sub _implementation_definitions {
 		'Perl' => {
 			root => $perl_root,
 			command => $perl_command
-				// $^X . ' bin/zuzu -Istdlib/test-modules',
+				// $^X . ' bin/zuzu.pl -Istdlib/test-modules',
 			zuzu => $perl_zuzu,
 		},
 		'Rust' => {
