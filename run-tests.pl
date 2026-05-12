@@ -3,6 +3,11 @@ use strict;
 use warnings;
 use utf8;
 
+BEGIN {
+	$ENV{AUTHOR_TESTING} = 1;
+	$ENV{EXTENDED_TESTING} = 1;
+};
+
 use Cwd qw( abs_path getcwd );
 use File::Basename qw( dirname );
 use File::Find qw( find );
@@ -170,25 +175,25 @@ sub _implementation_definitions {
 		'Perl' => {
 			root => $perl_root,
 			command => $perl_command
-				// $^X . ' bin/zuzu.pl -Istdlib/test-modules',
+				// $^X . ' bin/zuzu.pl -Istdlib/modules -Istdlib/test-modules',
 			zuzu => $perl_zuzu,
 		},
 		'Rust' => {
 			root => $rust_root,
 			command => $rust_command
-				// _shell_quote($rust_zuzu) . ' -Istdlib/test-modules',
+				// _shell_quote($rust_zuzu) . ' -Istdlib/modules -Istdlib/test-modules',
 			zuzu => $rust_zuzu,
 		},
 		'JS/Node' => {
 			root => $js_root,
 			command => $js_command
-				// 'node bin/zuzu-js -Istdlib/test-modules',
+				// 'node bin/zuzu-js -Istdlib/modules -Istdlib/test-modules',
 			zuzu => $js_zuzu,
 		},
 		'JS/Electron' => {
 			root => $js_root,
 			command => $electron_js_command
-				// _shell_quote($electron_bin) . ' bin/zuzu-js-electron -Istdlib/test-modules',
+				// _shell_quote($electron_bin) . ' bin/zuzu-js-electron -Istdlib/modules -Istdlib/test-modules',
 			zuzu => $electron_zuzu,
 			prerequisite => $electron_bin,
 		},
@@ -1390,7 +1395,7 @@ sub _ensure_fresh_submodule_checkouts {
 			'git',
 			'submodule',
 			'update',
-			'--init',
+			'--remote',
 			'--recursive',
 			'--',
 			@implementation_paths,
