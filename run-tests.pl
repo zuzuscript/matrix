@@ -505,6 +505,13 @@ sub _evaluate_impl {
 		cwd => $impl->{root},
 		timeout_seconds => $timeout,
 		zuzu_env => $impl->{zuzu},
+		env => {
+			FIXTURE_DIR => File::Spec->catdir(
+				$impl->{root},
+				'stdlib',
+				'test-fixtures',
+			),
+		},
 	);
 	my $assessed = _assess_command_result( $result, $timeout );
 
@@ -1452,6 +1459,11 @@ sub _run_with_timeout {
 
 	chdir $args{cwd} or die "Could not chdir to $args{cwd}: $!";
 	local $ENV{ZUZU} = $args{zuzu_env} if defined $args{zuzu_env};
+	my @env_keys = defined $args{env} ? keys %{ $args{env} } : ();
+	local @ENV{@env_keys};
+	for my $key (@env_keys) {
+		$ENV{$key} = $args{env}{$key};
+	}
 
 	my $started = _iso8601_utc_now();
 	my $started_ts = time();
