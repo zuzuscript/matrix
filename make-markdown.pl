@@ -72,7 +72,11 @@ push @lines, '| Test | ' . join( ' | ', @implementations ) . ' |';
 push @lines, '| --- | ' . join( ' | ', map { '---' } @implementations ) . ' |';
 
 for my $test_name (@tests) {
-	my @row = ( _markdown_escape($test_name) );
+	my $nice_test_name = $test_name;
+	$nice_test_name =~ s{^stdlib/tests/}{{stdlib} };
+	$nice_test_name =~ s{^languagetests/}{{lang} };
+	$nice_test_name =~ s{^marshall-interop/}{{marshall} };
+	my @row = ( _markdown_escape($nice_test_name) );
 
 	for my $r ( values %{ $matrix->{$test_name} } ) {
 		$r->{elapsed} //= _calculate_elapsed($r)
