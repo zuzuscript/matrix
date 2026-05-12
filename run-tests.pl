@@ -166,7 +166,7 @@ sub _implementation_definitions {
 	my $js_root = File::Spec->catdir( $matrix_root, 'implementations', 'zuzu-js' );
 
 	my $perl_zuzu = File::Spec->catfile( $perl_root, 'bin', 'zuzu.pl' );
-	my $rust_zuzu = File::Spec->catfile( $rust_root, 'target', 'debug', 'zuzu-rust' );
+	my $rust_zuzu = File::Spec->catfile( $rust_root, 'target', 'release', 'zuzu-rust' );
 	my $js_zuzu = File::Spec->catfile( $js_root, 'bin', 'zuzu-js' );
 	my $electron_zuzu = File::Spec->catfile( $js_root, 'bin', 'zuzu-js-electron' );
 	my $electron_bin = File::Spec->catfile( $js_root, 'node_modules', '.bin', 'electron' );
@@ -208,7 +208,7 @@ sub _prepare_default_rust_binary {
 
 	print "Building Rust implementation binary...\n";
 	my $result = _run_with_timeout(
-		command_prefix => 'cargo build --quiet --bin zuzu-rust 2>&1',
+		command_prefix => 'cargo build -r --quiet --bin zuzu-rust 2>&1',
 		cwd => $rust->{root},
 		timeout_seconds => 600,
 		zuzu_env => $rust->{zuzu},
