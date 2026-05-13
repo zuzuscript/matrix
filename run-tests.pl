@@ -39,6 +39,7 @@ my $browser_output_path = $default_browser_output_path;
 my $only_test_pattern;
 my $jobs = 4;
 my $include_browser = 1;
+my $include_cli = 1;
 my $manual_browser = 0;
 my $show_browser = 0;
 my $include_marshal_interop = 1;
@@ -61,6 +62,7 @@ GetOptions(
 	'only=s' => \$only_test_pattern,
 	'jobs=i' => \$jobs,
 	'browser!' => \$include_browser,
+	'cli!' => \$include_cli,
 	'manual-browser' => \$manual_browser,
 	'show-browser' => \$show_browser,
 	'marshal-interoperability!' => \$include_marshal_interop,
@@ -101,29 +103,32 @@ if ( scalar @ztest_files == 0 ) {
 	}
 }
 
-_prepare_default_rust_binary( $impl{Rust} );
 
-my %matrix;
-if ( scalar @ztest_files > 0 ) {
-	%matrix = _build_matrix_parallel(
-		implementations => \%impl,
-		timeout_seconds => $timeout_seconds,
-		ztest_files => \@ztest_files,
-		jobs => $jobs,
-	);
+if ($include_cli) {
+	_prepare_default_rust_binary( $impl{Rust} );
+
+	my %matrix;
+	if ( scalar @ztest_files > 0 ) {
+		%matrix = _build_matrix_parallel(
+			implementations => \%impl,
+			timeout_seconds => $timeout_seconds,
+			ztest_files => \@ztest_files,
+			jobs => $jobs,
+		);
+	}
+
+	if ($include_marshal_interop) {
+		my %marshal_matrix = _build_marshal_interop_matrix(
+			implementations => \%impl,
+			timeout_seconds => $timeout_seconds,
+			only_test_pattern => $only_test_pattern,
+		);
+		%matrix = ( %matrix, %marshal_matrix );
+	}
+
+	_write_json( $output_path, \%matrix );
+	print "Wrote $output_path\n";
 }
-
-if ($include_marshal_interop) {
-	my %marshal_matrix = _build_marshal_interop_matrix(
-		implementations => \%impl,
-		timeout_seconds => $timeout_seconds,
-		only_test_pattern => $only_test_pattern,
-	);
-	%matrix = ( %matrix, %marshal_matrix );
-}
-
-_write_json( $output_path, \%matrix );
-print "Wrote $output_path\n";
 
 if ($include_browser) {
 	_run_browser_matrix(
@@ -148,6 +153,7 @@ Options:
   --browser-output <path>   Browser JSON output path.
   --only <regex>            Include only test paths matching regex.
   --jobs <N>                Number of worker processes (default 4).
+  --no-cli                  Skip CLI matrix generation.
   --no-browser              Skip JS/Browser matrix generation.
   --manual-browser          Ask the browser harness to wait for a manual browser.
   --show-browser            Show the Electron browser window.
@@ -236,7 +242,7 @@ sub _ensure_browser_bundle {
 		: 'missing';
 	print "Building JS/Browser bundle ($reason)...\n";
 	my $result = _run_with_timeout(
-		command_prefix => './bin/build-browser-bundle 2>&1',
+		command_prefix => './bin/build-browser-bundle -M stdlib/modules --include test/more 2>&1',
 		cwd => $js_root,
 		timeout_seconds => 900,
 		zuzu_env => $js_impl->{zuzu},
