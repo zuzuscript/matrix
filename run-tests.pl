@@ -209,8 +209,8 @@ sub _implementation_definitions {
 sub _prepare_default_rust_binary {
 	my ($rust) = @_;
 	return if defined $rust_command;
-	return if -x $rust->{zuzu};
 	return if not -d $rust->{root};
+	return if _rust_binary_is_fresh($rust);
 
 	print "Building Rust implementation binary...\n";
 	my $result = _run_with_timeout(
@@ -223,6 +223,49 @@ sub _prepare_default_rust_binary {
 		die "Could not build Rust implementation binary:\n$result->{stdout}\n";
 	}
 	return;
+}
+
+sub _rust_binary_is_fresh {
+	my ($rust) = @_;
+	return 0 if not -x $rust->{zuzu};
+
+	my @binary_stat = stat( $rust->{zuzu} );
+	return 0 if not @binary_stat;
+	my $binary_mtime = $binary_stat[9];
+
+	for my $path ( _rust_build_input_paths( $rust->{root} ) ) {
+		my @stat = stat($path);
+		next if not @stat;
+		return 0 if $stat[9] > $binary_mtime;
+	}
+
+	return 1;
+}
+
+sub _rust_build_input_paths {
+	my ($rust_root) = @_;
+	my @paths;
+
+	for my $file (qw( Cargo.toml Cargo.lock build.rs )) {
+		my $path = File::Spec->catfile( $rust_root, $file );
+		push @paths, $path if -f $path;
+	}
+
+	my $src_dir = File::Spec->catdir( $rust_root, 'src' );
+	if ( -d $src_dir ) {
+		find(
+			{
+				no_chdir => 1,
+				wanted => sub {
+					return if -d $_;
+					push @paths, $_ if /\.(?:rs|c|h)\z/;
+				},
+			},
+			$src_dir,
+		);
+	}
+
+	return @paths;
 }
 
 sub _ensure_browser_bundle {
