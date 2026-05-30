@@ -271,7 +271,7 @@ sub _rust_build_input_paths {
 sub _ensure_browser_bundle {
 	my ($js_impl) = @_;
 	my $js_root = $js_impl->{root};
-	my $build_script = File::Spec->catfile( $js_root, 'bin', 'build-browser-bundle' );
+	my $build_script = File::Spec->catfile( $js_root, 'bin', 'zuzu-build-browser-bundle' );
 	my $bundle_path = File::Spec->catfile( $js_root, 'dist', 'zuzu-browser.js' );
 
 	if ( not -x $build_script ) {
@@ -285,7 +285,7 @@ sub _ensure_browser_bundle {
 		: 'missing';
 	print "Building JS/Browser bundle ($reason)...\n";
 	my $result = _run_with_timeout(
-		command_prefix => './bin/build-browser-bundle -M stdlib/modules --include test/more 2>&1',
+		command_prefix => './bin/zuzu-build-browser-bundle -M stdlib/modules --include test/more 2>&1',
 		cwd => $js_root,
 		timeout_seconds => 900,
 		zuzu_env => $js_impl->{zuzu},
@@ -619,7 +619,7 @@ sub _run_browser_matrix {
 	my $bundle_path = File::Spec->catfile( $js_root, 'dist', 'zuzu-browser.js' );
 	my $harness = File::Spec->catfile(
 		$js_root,
-		'bin',
+		'sbin',
 		'generate-browser-implementation-matrix-json',
 	);
 	my $electron = File::Spec->catfile( $js_root, 'node_modules', '.bin', 'electron' );
@@ -639,7 +639,7 @@ sub _run_browser_matrix {
 
 	my @parts = (
 		'node',
-		_shell_quote('bin/generate-browser-implementation-matrix-json'),
+		_shell_quote('sbin/generate-browser-implementation-matrix-json'),
 		'--timeout',
 		_shell_quote( $args{timeout_seconds} ),
 		'--output',
